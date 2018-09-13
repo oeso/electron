@@ -181,12 +181,17 @@ int AtomPermissionManager::RequestPermissionsWithDetails(
     const auto callback =
         base::Bind(&AtomPermissionManager::OnPermissionResponse,
                    base::Unretained(this), request_id, i);
-    if (details == nullptr) {
-      request_handler_.Run(web_contents, permission, callback,
-                           base::DictionaryValue());
-    } else {
-      request_handler_.Run(web_contents, permission, callback, *details);
+    base::DictionaryValue augmented_details = base::DictionaryValue();
+    if (details != nullptr) {
+      augmented_details.MergeDictionary(details);
     }
+
+    if (permission == content::PermissionType::AUDIO_CAPTURE) {
+      augmented_details.SetString("mediaType", "audio");
+    } else if (permission == content::PermissionType::VIDEO_CAPTURE) {
+      augmented_details.SetString("mediaType", "video");
+    }
+    request_handler_.Run(web_contents, permission, callback, augmented_details);
   }
 
   return request_id;
